@@ -49,7 +49,7 @@ fun MessageCard(msg: Message) {
     Row(modifier = Modifier.padding(all = 8.dp)) {
         Image(
             painter = painterResource(R.drawable.image_fond),
-            contentDescription = "image jolie",
+            contentDescription = "image joliee",
             modifier = Modifier
                 // Set image size to 40 dp
                 .size(40.dp)

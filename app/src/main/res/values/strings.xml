@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">AndroidERestaurant</string>
+    <string name="title_activity_2">Activity_2</string>
 </resources>

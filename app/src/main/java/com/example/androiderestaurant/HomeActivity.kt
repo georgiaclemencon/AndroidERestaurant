@@ -22,15 +22,30 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,15 +59,25 @@ class HomeActivity : ComponentActivity() {
 
             Surface(modifier = Modifier.fillMaxSize()) {
                 Column {
-                    MessageCard(nom = "Georgia", msg = "Hello bitches!")
-                    ThreeButtons(activity,::showToast) { category ->
-                        changeActivity(category)
+               //     MessageCard(nom = "Georgia", msg = "Hello bitches!")
+//                    ThreeButtons(activity, ::showToast) { category ->
+//                        changeActivity(category)
+                    ScaffoldExample(
+                        showToast = { message -> showToast(message) },
+                        startActivity = { message -> changeActivity(message)
+                            }
+
+
+                    )
+
+
                     }
                 }
 
             }
         }
-    }
+
+
 
     private fun changeActivity(message: String) {
         val intent = Intent(this, Activity2::class.java)
@@ -61,15 +86,64 @@ class HomeActivity : ComponentActivity() {
     }
 
     // Fonction pour afficher un toast
-    fun showToast(context: Context, message: String) {
+    fun showToast(message: String) {
         // Affichage du toast
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScaffoldExample(showToast: (String) -> Unit, startActivity: (String) -> Unit){
+    var presses by remember { mutableIntStateOf(0) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    Text("Top app bar")
+                }
+            )
+        },
+        bottomBar = {
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.primary,
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    text = "Bottom app bar",
+                )
+            }
+        },
+//        floatingActionButton = {
+//            FloatingActionButton(onClick = { presses++ }) {
+//                Icon(Icons.Default.Add, contentDescription = "Add")
+//            }
+//        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            MessageCard()
+            ThreeButtons(showToast = showToast, startActivity = startActivity)
+        }
     }
 }
 
 
 @Composable
-fun MessageCard(nom: String, msg: String) {
+fun MessageCard() {
     // Add padding around our message
     Column(modifier = Modifier.padding(all = 8.dp)) {
         Box {
@@ -89,28 +163,13 @@ fun MessageCard(nom: String, msg: String) {
                 modifier = Modifier.align(Alignment.Center)
 
             )
-
-            // Add a horizontal space between the image and the column
-            //Spacer(modifier = Modifier.width(8.dp))
-            Column {//La fonction Column vous permet d'organiser les éléments verticalement. Ajoutez Column à la fonction MessageCard. Vous pouvez utiliser Row pour organiser les éléments horizontalement et Box pour empiler des éléments.
-
-
-                // Add a vertical space between the author and message texts
-                //Spacer(modifier = Modifier.height(4.dp))
-                Text(text = nom)
-                Text(text = msg)
-                //Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Welcome", color = Color.Red)
-
-
-            }
         }
 
     }
 }
 
 @Composable
-fun ThreeButtons(context: Context, showToast: (Context, String) -> Unit, startActivity: (String) -> Unit) {
+fun ThreeButtons(showToast: (String) -> Unit, startActivity: (String) -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -121,7 +180,7 @@ fun ThreeButtons(context: Context, showToast: (Context, String) -> Unit, startAc
             //val intent = Intent(context, Activity2::class.java)
             //intent.putExtra("category", "Entrée")
             //context.startActivity(intent)
-            showToast(context, "Vous avez cliqué sur Entrée")
+            showToast( "Vous avez cliqué sur Entrée")
             Log.i("HomeActivity", "L'activité HomeActivity est détruite.")
             startActivity("Entrée")
         }, modifier = Modifier.padding(9.dp)) {
@@ -132,7 +191,7 @@ fun ThreeButtons(context: Context, showToast: (Context, String) -> Unit, startAc
             // val intent = Intent(context, Activity2::class.java)
             // intent.putExtra("category", "Plat")
             // context.startActivity(intent)
-            showToast(context, "Vous avez cliqué sur Plat")
+            showToast("Vous avez cliqué sur Plat")
             Log.i("HomeActivity", "L'activité HomeActivity est détruite.")
             startActivity("Plat")
 
@@ -144,7 +203,7 @@ fun ThreeButtons(context: Context, showToast: (Context, String) -> Unit, startAc
             // val intent = Intent(context, Activity2::class.java)
             // intent.putExtra("category", "Dessert")
             // context.startActivity(intent)
-            showToast(context, "Vous avez cliqué sur Dessert")
+            showToast("Vous avez cliqué sur Dessert")
             Log.i("HomeActivity", "L'activité HomeActivity est détruite.")
             startActivity("Dessert")
         }, modifier = Modifier.padding(8.dp)) {

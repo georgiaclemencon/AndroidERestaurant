@@ -1,6 +1,7 @@
 package com.example.androiderestaurant
 
 import com.google.gson.annotations.SerializedName
+import java.io.Serializable
 
 
 data class Prices (
@@ -13,4 +14,4 @@ data class Prices (
   @SerializedName("update_date" ) var updateDate : String? = null,
   @SerializedName("size"        ) var size       : String? = null
 
-)
+): Serializable

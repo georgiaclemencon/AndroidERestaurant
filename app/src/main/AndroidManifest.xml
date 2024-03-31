@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
     <!-- permissions for INTERNET -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"
+        tools:ignore="ScopedStorage" />
 
     <application
         android:allowBackup="true"
@@ -15,6 +18,11 @@
         android:theme="@style/Theme.AndroidERestaurant"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity
+            android:name=".Panier"
+            android:exported="false"
+            android:label="@string/title_activity_panier"
+            android:theme="@style/Theme.AndroidERestaurant" />
         <activity
             android:name=".Commande"
             android:exported="false"

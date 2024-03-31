@@ -2,5 +2,6 @@
     <string name="app_name">AndroidERestaurant</string>
     <string name="title_activity_2">Activity_2</string>
     <string name="title_activity_commande_item">Commande_item</string>
+    <string name="title_activity_panier">panier</string>
 
 </resources>

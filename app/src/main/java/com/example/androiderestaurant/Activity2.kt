@@ -1,10 +1,13 @@
 package com.example.androiderestaurant
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,10 +15,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -23,13 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.SubcomposeAsyncImage
+import coil.compose.rememberImagePainter
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
@@ -97,15 +98,14 @@ class Activity2 : ComponentActivity() {
 
 }
 
-
+@SuppressLint("CoroutineCreationDuringComposition")
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CategoryComponent(
     category: String,
     item: List<Items>,
-
     startActivity: (Items) -> Unit
 ) {
-
     Column(modifier = Modifier.padding(16.dp)) {
         Text(
             text = "Category: $category",
@@ -113,51 +113,49 @@ fun CategoryComponent(
             textAlign = TextAlign.Center
         )
         LazyColumn {
-
             items(item) { item ->
                 Text(
                     text = item.nameFr.toString(),
                     fontSize = 20.sp,
                     modifier = Modifier.padding(16.dp)
                 )
-                Button(onClick = {
-                    startActivity(item)
-                }) {
+                Button(
+                    onClick = { startActivity(item) },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        LazyRow {
-                            items(item.images) { imageUrl ->
-                                SubcomposeAsyncImage(
-                                    model = imageUrl,
-                                    loading = {
-                                        CircularProgressIndicator()
-                                    },
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(200.dp) // Set image size to be 200dp
-                                        .clip(RectangleShape) // Clip image to be square
-                                )
+                        if (item.images.isEmpty() || item.images.all { it.isEmpty() }) {
+                            Image(
+                                painter = rememberImagePainter("no_image"),
+                                contentDescription = null,
+                                modifier = Modifier.size(200.dp)
+                            )
+                        } else {
+                            val pagerState = rememberPagerState(initialPage = 0, pageCount = { item.images.size })
+                            HorizontalPager(state = pagerState) { page ->
+                                val imageUrl = item.images[page]
+                                Box(modifier = Modifier.size(200.dp)) {
+                                    if (imageUrl.isNotEmpty()) {
+                                        // Display image if URL is not empty
+                                        Image(
+                                            painter = rememberImagePainter(imageUrl),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(200.dp)
+                                        )
+                                    } else {
+                                        // Display placeholder if URL is empty
+                                        Image(
+                                            painter = rememberImagePainter("no_image"),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(200.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
-}
-
-
-@Composable
-fun Activity2Content(category: String?, data: String?) {
-    Text(text = "Category: $category")
-    Text(text = "Data: $data")
-}
-// Fonction pour effectuer une requête POST JSON à une URL donnée
-
-
-// faire 2 call back, elle prenne la reponse et l'erreur
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    AndroidERestaurantTheme {
     }
 }

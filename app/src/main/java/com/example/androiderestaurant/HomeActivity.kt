@@ -10,13 +10,18 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -30,12 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -90,6 +95,7 @@ class HomeActivity : ComponentActivity() {
 @Composable
 fun ScaffoldExample(showToast: (String) -> Unit, startActivity: (String) -> Unit) {
     var presses by remember { mutableIntStateOf(0) }
+    val restoItalic = FontFamily(Font(R.font.restoitalic))
 
     Scaffold(
         topBar = {
@@ -101,7 +107,7 @@ fun ScaffoldExample(showToast: (String) -> Unit, startActivity: (String) -> Unit
                 title = {
                     Text(
                         "Droid Restaurant",
-                        fontFamily = FontFamily(Font(R.font.bold))
+                        fontFamily = restoItalic
                     )
 
 
@@ -110,23 +116,44 @@ fun ScaffoldExample(showToast: (String) -> Unit, startActivity: (String) -> Unit
         },
         bottomBar = {
             BottomAppBar(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.primary,
-            ) {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    text = "Bottom app bar",
+    containerColor = MaterialTheme.colorScheme.primaryContainer,
+    contentColor = MaterialTheme.colorScheme.primary,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { /* Removed click handler */ }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.insta),
+                    contentDescription = "Instagram Logo",
+                    modifier = Modifier.size(24.dp)
                 )
             }
+            Text(text = "@Erestaurant", fontFamily = restoItalic)
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { /* Removed click handler */ }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.mail),
+                    contentDescription = "Mail Logo",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Text(text = "Erestaurant@gmail.com", fontFamily = restoItalic)
+        }
+    }
+}
         },
-//        floatingActionButton = {
-//            FloatingActionButton(onClick = { presses++ }) {
-//                Icon(Icons.Default.Add, contentDescription = "Add")
-//            }
-//        }
-    ) { innerPadding ->
+
+
+
+        ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding),
@@ -149,9 +176,9 @@ fun MessageCard() {
                 painter = painterResource(R.drawable.image_fond),
                 contentDescription = "image jolie",
                 modifier = Modifier
-                    // Set image size to 40 dp
                     .fillMaxWidth()
                     .wrapContentHeight()
+                    .alpha(0.8f) // rend l'image semi-transparente
             )
             Text(
                 text = "Bienvenu au resto de gg",
@@ -169,11 +196,22 @@ fun MessageCard() {
 
 @Composable
 fun ThreeButtons(showToast: (String) -> Unit, startActivity: (String) -> Unit) {
+    val restoItalic = FontFamily(Font(R.font.restoitalic))
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+       Text(
+    text = "Menu",
+    fontSize = 34.sp, // Taille du texte
+    color = Color.Black,
+    fontFamily = restoItalic,
+    modifier = Modifier.align(Alignment.CenterHorizontally)
+)
+Spacer(modifier = Modifier.padding(16.dp))
+
+
         Button(onClick = {
             showToast("Vous avez cliqué sur Entrée")
             Log.i("HomeActivity", "L'activité HomeActivity est détruite.")

@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,8 +21,6 @@ import com.example.androiderestaurant.ui.theme.AndroidERestaurantTheme
 import com.example.androiderestaurant.ui.theme.SharedPrefManager
 
 class Panier : ComponentActivity() {
-
-
 
     @SuppressLint("UnrememberedMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,8 +54,6 @@ class Panier : ComponentActivity() {
         }
     }
 
-
-
     private fun placeOrder(selectedItems: ArrayList<Items>?, sharedPrefManager: SharedPrefManager) {
         // Place the order
         // Clear the cart
@@ -63,58 +61,54 @@ class Panier : ComponentActivity() {
         selectedItems?.forEach { item ->
             sharedPrefManager.saveItemInfo(item, 0)
         }
-
     }
 
     fun onItemRemoved(
-    item: Items,
-    selectedItems: MutableState<List<Items>>,
-    sharedPrefManager: SharedPrefManager
-) {
-    // Remove the item from the list of selected items
-    selectedItems.value = selectedItems.value.filter { it != item }
+        item: Items,
+        selectedItems: MutableState<List<Items>>,
+        sharedPrefManager: SharedPrefManager
+    ) {
+        // Remove the item from the list of selected items
+        selectedItems.value = selectedItems.value.filter { it != item }
 
-    // Update the number of items in the cart
-    sharedPrefManager.saveCartItemCount(selectedItems.value.size)
+        // Update the number of items in the cart
+        sharedPrefManager.saveCartItemCount(selectedItems.value.size)
 
-    // Remove the item info from shared preferences
-    sharedPrefManager.saveItemInfo(item, 0)
+        // Remove the item info from shared preferences
+        sharedPrefManager.saveItemInfo(item, 0)
 
-    // Display a toast to inform the user that the item has been removed from the cart
-    val message = "Item retiré du panier"
-    // Toast.makeText(context, message, Toast.LENGTH_SHORT).show() // Uncomment this if you have a context
-}
-
-
-
-
+        // Display a toast to inform the user that the item has been removed from the cart
+        val message = "Item retiré du panier"
+        // Toast.makeText(context, message, Toast.LENGTH_SHORT).show() // Uncomment this if you have a context
+    }
 }
 
 @Composable
 fun PanierScreen(
     selectedItems: MutableState<List<Items>>,
-    selectedItemNames: List<String>, // Ajoutez ce paramètre
+    selectedItemNames: List<String>,
     category: String,
     sharedPrefManager: SharedPrefManager,
     onOrderPlaced: () -> Unit,
     onItemRemoved: (Items, MutableState<List<Items>>, SharedPrefManager) -> Unit
 ) {
-    Column(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, // Aligner horizontalement
-        verticalArrangement = Arrangement.Center // Aligner verticalement
-    ) {
-        Text(
-            text = "Panier",
-            fontSize = 24.sp,
-            color = Color.Black
-        )
-        var totalPrice = 0.0
+    var totalPrice by remember { mutableStateOf(0.0) }
 
-        // Itérer sur selectedItems pour afficher le prix, la quantité de chaque article et un bouton pour le supprimer
-        selectedItems.value.forEach { item ->
+    LazyColumn(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        item {
+            Text(
+                text = "Panier",
+                fontSize = 24.sp,
+                color = Color.Black
+            )
+        }
+
+        items(selectedItems.value) { item ->
             val quantity = sharedPrefManager.getItemQuantity(item).toDouble()
-            if (quantity > 0) { // Ajoutez cette condition
+            if (quantity > 0) {
                 val price = item.prices.getOrNull(0)?.price?.toDouble() ?: 0.0
                 totalPrice += price * quantity
                 Text(
@@ -128,18 +122,23 @@ fun PanierScreen(
             }
         }
 
-        // Afficher le prix total
-        Text(
-            text = "Total Price: $totalPrice €",
-            fontSize = 18.sp,
-            color = Color.Black
-        )
+        item {
+            Text(
+                text = "Total Price: $totalPrice €",
+                fontSize = 18.sp,
+                color = Color.Black
+            )
+        }
 
-        Button(
-            onClick = onOrderPlaced,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text("Passer la commande")
+        item {
+            Button(
+    onClick = onOrderPlaced,
+    modifier = Modifier
+        .fillMaxWidth()
+        .wrapContentWidth(Alignment.CenterHorizontally)
+) {
+    Text("Passer la commande")
+}
         }
     }
 }

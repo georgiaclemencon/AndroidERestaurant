@@ -32,3 +32,4 @@ class SharedPrefManager(context: Context) {
         return sharedPreferences.getInt(item.nameFr, 0) // Default value is 0
     }
 }
+

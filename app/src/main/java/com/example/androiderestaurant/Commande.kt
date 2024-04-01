@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Patterns
+import android.webkit.URLUtil
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -41,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,8 +63,13 @@ import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import com.example.androiderestaurant.ui.theme.AndroidERestaurantTheme
 import com.example.androiderestaurant.ui.theme.SharedPrefManager
+import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
+import kotlinx.coroutines.launch
+import java.io.File
 import java.io.OutputStreamWriter
+import java.net.MalformedURLException
+import java.net.URL
 
 
 class Commande : ComponentActivity() {
@@ -76,6 +84,7 @@ class Commande : ComponentActivity() {
         val name = bundle?.getSerializable("dish") as Items
 
         selectedItems.add(name) // Add the selected item to the list
+        readFromJSONFile(selectedItems)
 
         // Initialize sharedPrefManager before setContent
         sharedPrefManager = SharedPrefManager(this)
@@ -114,27 +123,15 @@ class Commande : ComponentActivity() {
         editor.apply()
     }
 
-    fun onItemSelected(item: Items, quantity: Int) {
-    // Vérifiez si l'article est déjà dans la liste
-    val existingItem = selectedItems.find { it.id == item.id }
-    if (existingItem == null) {
-        // Si l'article n'est pas dans la liste, augmentez le nombre d'articles dans le panier
-        sharedPrefManager.incrementCartItemCount()
-        // Ajoutez l'article sélectionné à la liste des articles sélectionnés
-        selectedItems.add(item)
-    } else {
-        // Si l'article est déjà dans la liste, mettez à jour la quantité
-        // Vous pouvez ajouter une logique ici pour mettre à jour la quantité si nécessaire
-    }
+  fun onItemSelected(item: Items, quantity: Int) {
+    // Augmentez le nombre d'articles dans le panier
+    sharedPrefManager.incrementCartItemCount()
 
-    // Convertissez la liste des articles sélectionnés en JSON
-    val gson = Gson()
-    val selectedItemsJson = gson.toJson(selectedItems)
+    // Ajoutez l'article sélectionné à la liste des articles sélectionnés
+    selectedItems.add(item)
 
-    // Écrivez le JSON dans un fichier
-    val fileName = "user_cart.json"
-    val fileOutputStream = openFileOutput(fileName, Context.MODE_PRIVATE)
-    fileOutputStream.use { it.write(selectedItemsJson.toByteArray()) }
+    // Ajoutez l'élément au fichier JSON
+    addToJSONFile(item)
 
     // Mettez à jour le nombre d'articles dans le panier
     sharedPrefManager.saveCartItemCount(selectedItems.size)
@@ -171,6 +168,73 @@ class Commande : ComponentActivity() {
         ) // Pass the selected items to the new activity
         this.startActivity(intent)
     }
+
+
+
+
+    private fun addToJSONFile(item: Items) {
+        // Créez une instance de la classe Gson
+        val gson = Gson()
+
+        // Obtenez le répertoire de l'application
+        val directory = this.filesDir
+
+        // Créez un fichier dans ce répertoire
+        val file = File(directory, "someFileName.json")
+
+        // Créez une liste pour stocker les éléments
+        val itemsList: MutableList<Items>
+
+        // Vérifiez si le fichier existe
+        if (file.exists()) {
+            // Si le fichier existe, lisez son contenu
+            val jsonString = file.readText()
+
+            // Convertissez la chaîne JSON en une liste d'éléments
+            val itemType = object : TypeToken<List<Items>>() {}.type
+            itemsList = gson.fromJson(jsonString, itemType)
+
+            // Ajoutez le nouvel élément à la liste
+            itemsList.add(item)
+        } else {
+            // Si le fichier n'existe pas, créez une nouvelle liste contenant uniquement le nouvel élément
+            itemsList = mutableListOf(item)
+        }
+
+        // Convertissez la liste mise à jour en une chaîne JSON
+        val updatedJsonString = gson.toJson(itemsList)
+
+        // Écrivez la chaîne JSON dans le fichier
+        file.writeText(updatedJsonString)
+    }
+
+    private fun readFromJSONFile(basketItems: MutableList<Items>) {
+        // Créez une instance de la classe Gson
+        val gson = Gson()
+
+        // Obtenez le répertoire de l'application
+        val directory = this.filesDir
+
+
+        // Créez un fichier dans ce répertoire
+        val file = File(directory, "someFileName.json")
+
+        // Vérifiez si le fichier existe
+        if (file.exists()) {
+            // Si le fichier existe, lisez son contenu
+            val jsonString = file.readText()
+
+            // Convertissez la chaîne JSON en une liste d'éléments
+            val itemType = object : TypeToken<List<Items>>() {}.type
+            basketItems.clear()
+            basketItems.addAll(gson.fromJson(jsonString, itemType))
+        }
+
+    }
+
+
+
+
 }
 
 
@@ -224,7 +288,13 @@ fun DisplayCommande(
                         onItemSelected,
                         quantity,
                         goToPanier,
-                        sharedPrefManager
+                        sharedPrefManager,
+                        addToJSONFile = { item ->
+                            scope.launch {
+                                sharedPrefManager.saveItemInfo(item, quantity.value)
+                            }
+                        }
+
                     )
                 }
             }
@@ -262,18 +332,22 @@ fun TopBar(goToPanier: () -> Unit, sharedPrefManager: SharedPrefManager) {
     )
 }
 
-
 @Composable
 fun CartIconWithCount(sharedPrefManager: SharedPrefManager) {
+    val cartItemCount = remember { mutableStateOf(0) }
+
+    LaunchedEffect(key1 = sharedPrefManager) {
+        cartItemCount.value = sharedPrefManager.getCartItemCount()
+    }
+
     Box {
         Icon(
             painter = painterResource(id = R.drawable.shopping),
             contentDescription = "Cart"
         )
-        val cartItemCount = sharedPrefManager.getCartItemCount()
-        if (cartItemCount > 0) {
+        if (cartItemCount.value > 0) {
             Text(
-                text = cartItemCount.toString(),
+                text = cartItemCount.value.toString(),
                 color = Color.Red,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -286,16 +360,30 @@ fun CartIconWithCount(sharedPrefManager: SharedPrefManager) {
 }
 
 
+fun IsValidUrl(urlString: String?): Boolean {
+
+        try {
+            val url = URL(urlString)
+            return URLUtil.isValidUrl(urlString) && Patterns.WEB_URL.matcher(urlString).matches()
+        } catch (ignored: MalformedURLException) {
+        }
+        return false
+    }
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ItemCard(
-    item: Items, selectedItemIndex: MutableState<Int?>,
-    index: Int, onItemSelected: (Items) -> Unit,
+    item: Items,
+    selectedItemIndex: MutableState<Int?>,
+    index: Int,
+    onItemSelected: (Items) -> Unit,
     quantity: MutableState<Int>,
     goToPanier: () -> Unit = { /* default implementation here */ },
-    sharedPrefManager: SharedPrefManager
+    sharedPrefManager: SharedPrefManager,
+    addToJSONFile: (Items) -> Unit
 ) {
     val scope = rememberCoroutineScope()
+
 
 
     Box(
@@ -321,108 +409,127 @@ fun ItemCard(
                 item.images.size
             })
             HorizontalPager(state = pagerState) { index ->
-                SubcomposeAsyncImage(
-                    model = item.images[index],
-                    loading = {
-                        CircularProgressIndicator()
-                    },
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(200.dp) // Set image size to be 200dp
-//                                    .clip(RectangleShape) // Clip image to be square
-                )
-            }
-
-            Card(
+    val imageUrl = item.images.firstOrNull()
+    if (imageUrl != null) {
+        if (IsValidUrl(imageUrl)) {
+            SubcomposeAsyncImage(
+                model = imageUrl,
+                loading = {
+                    CircularProgressIndicator()
+                },
+                contentDescription = null,
                 modifier = Modifier
-                    .padding(8.dp)
-            ) {
+                    .size(200.dp) // Set image size to be 200dp
+            )
+        } else {
+            Image(
+                painter = painterResource(id = R.drawable.image_not_available),
+                contentDescription = "Image par défaut",
+                modifier = Modifier
+                    .size(200.dp) // Set image size to be 200dp
+            )
+        }
+    }
+}
+
+                Card(
+                    modifier = Modifier
+                        .padding(8.dp)
+                ) {
 
 
-                Text(
-                    text = "Ingredients: ",
-                    fontSize = 18.sp,
-                    color = Color.Black
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.arrow),
-                    contentDescription = null
-                )
-
-                if (selectedItemIndex.value == index) {
                     Text(
-                        text = item.ingredients.joinToString(", \n") {
-                            it.nameFr ?: "No name"
-                        },
+                        text = "Ingredients: ",
                         fontSize = 18.sp,
                         color = Color.Black
                     )
+                    Image(
+                        painter = painterResource(id = R.drawable.arrow),
+                        contentDescription = null
+                    )
 
+                    if (selectedItemIndex.value == index) {
+                        Text(
+                            text = item.ingredients.joinToString(", \n") {
+                                it.nameFr ?: "No name"
+                            },
+                            fontSize = 18.sp,
+                            color = Color.Black
+                        )
+
+
+                    }
+                    Text(
+                        text = "Price: ${item.prices.getOrNull(0)?.price ?: "No price"}€",
+                        fontSize = 18.sp,
+                        color = Color.Black
+                    )
+                }
+
+
+
+                Row {
+                    Button(onClick = {
+                        onItemSelected(item)
+                        goToPanier()
+
+                    }) {
+
+                        Text("Voir mon panier")
+                    }
+                    Button(onClick = {
+
+                        onItemSelected(item)
+                        addToJSONFile(item)
+
+                    })
+
+                    {
+                        Text("Ajouter au panier")
+                    }
 
                 }
-                Text(
-                    text = "Price: ${item.prices.getOrNull(0)?.price ?: "No price"}€",
-                    fontSize = 18.sp,
-                    color = Color.Black
-                )
+
+
             }
 
-
-
-            Row {
-                Button(onClick = {
-                    onItemSelected(item)
-                    goToPanier()
-
-                }) {
-
-                    Text("Voir mon panier")
-                }
-                Button(onClick = {
-
-                    onItemSelected(item)
-
-                })
-
-                {
-                    Text("Ajouter au panier")
-                }
-
-            }
-
-            QuantitySelector(item, quantity)
+        QuantitySelector(item, quantity)
         }
+
 
     }
 
-}
 
 
-@Composable
-fun QuantitySelector(item: Items, quantity: MutableState<Int>) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = colorResource(id = R.color.purple_200),
-        ),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+
+    @Composable
+    fun QuantitySelector(item: Items, quantity: MutableState<Int>) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = colorResource(id = R.color.purple_200),
+            ),
         ) {
-            IconButton(onClick = { if (quantity.value > 1) quantity.value-- }) {
-                Icon(Icons.Filled.Remove, contentDescription = "Decrease")
-            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                IconButton(onClick = { if (quantity.value > 1) quantity.value-- }) {
+                    Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+                }
 
-            Text(
-                text = quantity.value.toString(),
-                fontSize = 24.sp,
-                color = Color.Black,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
+                Text(
+                    text = quantity.value.toString(),
+                    fontSize = 24.sp,
+                    color = Color.Black,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
 
-            IconButton(onClick = { quantity.value++ }) {
-                Icon(painterResource(id = R.drawable.add), contentDescription = "Add")
+                IconButton(onClick = { quantity.value++ }) {
+                    Icon(painterResource(id = R.drawable.add), contentDescription = "Add")
+                }
             }
         }
     }
-}
+
+
+

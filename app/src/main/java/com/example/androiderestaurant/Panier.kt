@@ -2,21 +2,14 @@ package com.example.androiderestaurant
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +19,9 @@ import com.example.androiderestaurant.ui.theme.AndroidERestaurantTheme
 import com.example.androiderestaurant.ui.theme.SharedPrefManager
 
 class Panier : ComponentActivity() {
+
+
+
     @SuppressLint("UnrememberedMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,69 +40,100 @@ class Panier : ComponentActivity() {
                         selectedItems = mutableStateOf(selectedItems ?: emptyList()),
                         selectedItemNames = selectedItemNames ?: emptyList(), // Pass the item names
                         category = "",
-                        sharedPrefManager = sharedPrefManager
-                    ) {
-                        // Define what happens when the order is placed here
-                        // For example, you can show a Toast message
-                        Toast.makeText(this, "Order placed", Toast.LENGTH_SHORT).show()
-                    }
+                        sharedPrefManager = sharedPrefManager,
+                        onOrderPlaced = {
+                            // Place the order
+                            placeOrder(selectedItems, sharedPrefManager)
+                        },
+                        onItemRemoved = { item, selectedItems, sharedPrefManager ->
+                            onItemRemoved(item, selectedItems, sharedPrefManager)
+                        }
+                    )
                 }
             }
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun PanierScreen(
-        selectedItems: MutableState<List<Items>>,
-        selectedItemNames: List<String>, // Add this parameter
-        category: String,
-        sharedPrefManager: SharedPrefManager,
-        onOrderPlaced: () -> Unit
+
+
+    private fun placeOrder(selectedItems: ArrayList<Items>?, sharedPrefManager: SharedPrefManager) {
+        // Place the order
+        // Clear the cart
+        sharedPrefManager.saveCartItemCount(0)
+        selectedItems?.forEach { item ->
+            sharedPrefManager.saveItemInfo(item, 0)
+        }
+
+    }
+
+    fun onItemRemoved(
+    item: Items,
+    selectedItems: MutableState<List<Items>>,
+    sharedPrefManager: SharedPrefManager
+) {
+    // Remove the item from the list of selected items
+    selectedItems.value = selectedItems.value.filter { it != item }
+
+    // Update the number of items in the cart
+    sharedPrefManager.saveCartItemCount(selectedItems.value.size)
+
+    // Remove the item info from shared preferences
+    sharedPrefManager.saveItemInfo(item, 0)
+
+    // Display a toast to inform the user that the item has been removed from the cart
+    val message = "Item retiré du panier"
+    // Toast.makeText(context, message, Toast.LENGTH_SHORT).show() // Uncomment this if you have a context
+}
+}@Composable
+fun PanierScreen(
+    selectedItems: MutableState<List<Items>>,
+    selectedItemNames: List<String>, // Ajoutez ce paramètre
+    category: String,
+    sharedPrefManager: SharedPrefManager,
+    onOrderPlaced: () -> Unit,
+    onItemRemoved: (Items, MutableState<List<Items>>, SharedPrefManager) -> Unit
+) {
+    Column(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, // Aligner horizontalement
+        verticalArrangement = Arrangement.Center // Aligner verticalement
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally, // Align horizontally
-            verticalArrangement = Arrangement.Center // Align vertically
-        ) {
-            Text(
-                text = "Panier",
-                fontSize = 24.sp,
-                color = Color.Black
-            )
+        Text(
+            text = "Panier",
+            fontSize = 24.sp,
+            color = Color.Black
+        )
+        var totalPrice = 0.0
 
-            var totalPrice = 0.0
-
-            // Iterate over selectedItems to display each item's price, quantity and a button to remove it
-            selectedItems.value.forEach { item ->
+        // Itérer sur selectedItems pour afficher le prix, la quantité de chaque article et un bouton pour le supprimer
+        selectedItems.value.forEach { item ->
+            val quantity = sharedPrefManager.getItemQuantity(item).toDouble()
+            if (quantity > 0) { // Ajoutez cette condition
                 val price = item.prices.getOrNull(0)?.price?.toDouble() ?: 0.0
-                val quantity = sharedPrefManager.getItemQuantity(item).toDouble()
                 totalPrice += price * quantity
                 Text(
                     text = "Item: ${item.nameFr}, Price: $price €, Quantity: $quantity",
                     fontSize = 18.sp,
                     color = Color.Black
                 )
-                Button(onClick = {
-                    selectedItems.value = selectedItems.value.filter { it != item }
-                }) {
+                Button(onClick = { onItemRemoved(item, selectedItems, sharedPrefManager) }) {
                     Text("Supprimer")
                 }
             }
+        }
 
-            // Display the total price
-            Text(
-                text = "Total Price: $totalPrice €",
-                fontSize = 18.sp,
-                color = Color.Black
-            )
+        // Afficher le prix total
+        Text(
+            text = "Total Price: $totalPrice €",
+            fontSize = 18.sp,
+            color = Color.Black
+        )
 
-            Button(
-                onClick = onOrderPlaced,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
-                Text("Passer la commande")
-            }
+        Button(
+            onClick = onOrderPlaced,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Passer la commande")
         }
     }
 }

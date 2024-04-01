@@ -82,7 +82,6 @@ class Panier : ComponentActivity() {
         // Toast.makeText(context, message, Toast.LENGTH_SHORT).show() // Uncomment this if you have a context
     }
 }
-
 @Composable
 fun PanierScreen(
     selectedItems: MutableState<List<Items>>,
@@ -93,6 +92,15 @@ fun PanierScreen(
     onItemRemoved: (Items, MutableState<List<Items>>, SharedPrefManager) -> Unit
 ) {
     var totalPrice by remember { mutableStateOf(0.0) }
+
+    LaunchedEffect(key1 = selectedItems.value) {
+        // Calculate the total price when the list of selected items changes
+        totalPrice = selectedItems.value.sumByDouble { item ->
+            val quantity = sharedPrefManager.getItemQuantity(item).toDouble()
+            val price = item.prices.getOrNull(0)?.price?.toDouble() ?: 0.0
+            price * quantity
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -110,7 +118,6 @@ fun PanierScreen(
             val quantity = sharedPrefManager.getItemQuantity(item).toDouble()
             if (quantity > 0) {
                 val price = item.prices.getOrNull(0)?.price?.toDouble() ?: 0.0
-                totalPrice += price * quantity
                 Text(
                     text = "Item: ${item.nameFr}, Price: $price €, Quantity: $quantity",
                     fontSize = 18.sp,
@@ -132,13 +139,13 @@ fun PanierScreen(
 
         item {
             Button(
-    onClick = onOrderPlaced,
-    modifier = Modifier
-        .fillMaxWidth()
-        .wrapContentWidth(Alignment.CenterHorizontally)
-) {
-    Text("Passer la commande")
-}
+                onClick = onOrderPlaced,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+            ) {
+                Text("Passer la commande")
+            }
         }
     }
 }

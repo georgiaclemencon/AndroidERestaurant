@@ -268,7 +268,8 @@ fun TopBar(goToPanier: () -> Unit, sharedPrefManager: SharedPrefManager) {
                 TabBarIconView(
                     isSelected = true, // Set this based on your logic
                     title = "Cart",
-                    badgeAmount = sharedPrefManager.getCartItemCount() // Set the badge amount
+                    badgeAmount = sharedPrefManager.getCartItemCount(),
+                    sharedPrefManager = sharedPrefManager
                 )
             }
         }
@@ -353,20 +354,21 @@ val MyTypography = androidx.compose.material.Typography(
 
 )
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabBarIconView(
     isSelected: Boolean,
     title: String,
-    badgeAmount: Int? = null
+    badgeAmount: Int, // Change this to Int
+    sharedPrefManager: SharedPrefManager // Add this parameter
 ) {
-    val shoppingIcon =
-        painterResource(R.drawable.shopping) // Remplacez ceci par votre icône "shopping"
+    val shoppingIcon = painterResource(R.drawable.shopping) // Replace this with your "shopping" icon
+
+    val cartItemCount = sharedPrefManager.getCartItemCount() // Get the cart item count
 
     BadgedBox(
-        badge = { TabBarBadgeView(badgeAmount) },
-        modifier = Modifier.offset(x = -10.dp, y = 10.dp) // Ajoutez un décalage ici
+        badge = { TabBarBadgeView(cartItemCount) }, // Use cartItemCount here
+        modifier = Modifier.offset(x = -10.dp, y = 10.dp) // Add an offset here
     ) {
         Icon(
             painter = shoppingIcon,

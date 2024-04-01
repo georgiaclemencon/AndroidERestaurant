@@ -7,6 +7,7 @@ class SharedPrefManager(context: Context) {
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("MySharedPref", Context.MODE_PRIVATE)
 
+
     fun saveCartItemCount(count: Int) {
         val editor: SharedPreferences.Editor = sharedPreferences.edit()
         editor.putInt("cartItemCount", count)

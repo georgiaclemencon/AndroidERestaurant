@@ -16,4 +16,6 @@ data class Items (
   @SerializedName("ingredients"   ) var ingredients : ArrayList<Ingredients> = arrayListOf(),
   @SerializedName("prices"        ) var prices      : ArrayList<Prices>      = arrayListOf()
 
-): Serializable
+): Serializable {
+    var quantity: Int = 0
+}

@@ -84,7 +84,13 @@ class Panier : ComponentActivity() {
     val message = "Item retiré du panier"
     // Toast.makeText(context, message, Toast.LENGTH_SHORT).show() // Uncomment this if you have a context
 }
-}@Composable
+
+
+
+
+}
+
+@Composable
 fun PanierScreen(
     selectedItems: MutableState<List<Items>>,
     selectedItemNames: List<String>, // Ajoutez ce paramètre
